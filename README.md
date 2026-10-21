@@ -120,6 +120,16 @@ cd transfer-service
 
 ---
 
+## 🤖 Engenharia Assistida por IA & Arquitetura de Agentes
+
+O **FinFlow** foi concebido e desenvolvido utilizando práticas avançadas de **Desenvolvimento Orientado por IA (AI-Driven Development)**, servindo como um case prático de colaboração humano-IA na engenharia de software moderna:
+
+- **Human-in-the-Loop (Tech Lead & Tomada de Decisão):** O desenvolvedor (Luciano Junior) atua como o arquiteto principal, definindo os requisitos de negócio, decisões arquiteturais e padrões de projeto. A IA atua como mentora sênior e parceira técnica de desenvolvimento.
+- **Uso de Agentes Especializados:** O ecossistema do projeto conta com agentes customizados (*FinFlow Mentor* para orientação arquitetural/backend em Java/Spring Boot e *FinFlow QA / Test Engineer* para estratégia de testes e qualidade).
+- **Governança via Contexto (`CLAUDE.md`):** Definição de regras de desenvolvimento, padrões de commit, diretrizes de segurança e escopo técnico versionados diretamente no repositório, garantindo autonomia e alinhamento com padrões corporativos.
+
+---
+
 ## 👨‍💻 Autoria e Mentoria
 
 Projeto desenvolvido por **Luciano Junior** (Estudante de Análise e Desenvolvimento de Sistemas) em parceria técnica com assistente de IA especializado em mentoria de desenvolvimento backend em Java e Spring Boot.
