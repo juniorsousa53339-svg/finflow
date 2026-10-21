@@ -22,14 +22,14 @@ public class Transfer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+    @NotNull(message = "A conta de origem é obrigatória")
     private Integer sourceAccount;
 
-    @NotNull
+    @NotNull(message = "O valor é obrigatório")
     private Integer destinationAccount;
 
-    @Positive
-    @NotNull
+    @NotNull(message = "O valor é obrigatório")
+    @Positive(message = "O valor da transferência deve ser maior que zero")
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
