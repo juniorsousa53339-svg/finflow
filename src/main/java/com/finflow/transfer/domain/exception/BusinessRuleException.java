@@ -1,4 +1,4 @@
-package com.finflow.transfer.exception;
+package com.finflow.transfer.domain.exception;
 
 public class BusinessRuleException extends RuntimeException {
     public BusinessRuleException(String message) {

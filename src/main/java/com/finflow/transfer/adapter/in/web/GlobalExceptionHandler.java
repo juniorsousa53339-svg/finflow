@@ -1,6 +1,8 @@
-package com.finflow.transfer.exception;
+package com.finflow.transfer.adapter.in.web;
 
 
+import com.finflow.transfer.domain.exception.BusinessRuleException;
+import com.finflow.transfer.domain.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

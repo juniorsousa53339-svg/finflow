@@ -1,4 +1,4 @@
-package com.finflow.transfer.dto;
+package com.finflow.transfer.adapter.in.web.dto;
 
 
 import jakarta.validation.constraints.NotNull;

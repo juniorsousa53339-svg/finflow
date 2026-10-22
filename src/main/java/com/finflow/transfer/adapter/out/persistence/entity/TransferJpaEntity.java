@@ -1,7 +1,6 @@
-package com.finflow.transfer.domain;
+package com.finflow.transfer.adapter.out.persistence.entity;
 
-
-import com.finflow.transfer.enums.Status;
+import com.finflow.transfer.domain.model.Status;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -14,9 +13,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transfer")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
-public class Transfer {
+public class TransferJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
