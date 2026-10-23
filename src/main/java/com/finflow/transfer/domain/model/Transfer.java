@@ -17,24 +17,10 @@ public class Transfer {
     private Long id;
 
     private Integer sourceAccount;
-
     private Integer destinationAccount;
-
     private BigDecimal amount;
-
     private Status status;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
-    public void prePersist() {
-        LocalDateTime agora = LocalDateTime.now();
-        this.createdAt = agora;
-        this.updatedAt = agora;
-    }
-
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
