@@ -1,4 +1,7 @@
 package com.finflow.transfer.domain.port.out;
 
-public interface TransferPersistencePort {
+import com.finflow.transfer.domain.model.Transfer;
+
+public interface TransferPersistencePort{
+    Transfer save(Transfer transfer);
 }
