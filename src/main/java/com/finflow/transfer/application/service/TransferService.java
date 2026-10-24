@@ -22,6 +22,7 @@ public class TransferService implements CreateTransferUseCase {
 
     @Override
     public Transfer createTransfer(Transfer transfer) {
+        validarRegrasTransferencia(transfer);
         return transferPersistencePort.save(transfer);
     }
 }
