@@ -3,6 +3,7 @@ package com.finflow.transfer.application.service;
 import com.finflow.transfer.domain.exception.BusinessRuleException;
 import com.finflow.transfer.domain.model.Status;
 import com.finflow.transfer.domain.model.Transfer;
+import com.finflow.transfer.domain.port.out.TransferEventPublisherPort;
 import com.finflow.transfer.domain.port.out.TransferPersistencePort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ class TransferServiceTest {
 
     @Mock
     private TransferPersistencePort transferPersistencePort; // Cria um mock (dublê) da porta de persistência
+
+    @Mock
+    private TransferEventPublisherPort transferEventPublisherPort; // Cria um mock da porta de publicação de eventos (Kafka)
 
     @InjectMocks
     private TransferService transferService; // Injeta os mocks acima dentro do TransferService
@@ -64,6 +68,9 @@ class TransferServiceTest {
 
         // Verifica se o método save da porta foi chamado exatamente 1 vez
         verify(transferPersistencePort, times(1)).save(any(Transfer.class));
+
+        // Verifica se o evento Kafka foi publicado exatamente 1 vez
+        verify(transferEventPublisherPort, times(1)).publishTransferCreated(any(Transfer.class));
     }
 
     @Test
@@ -87,5 +94,8 @@ class TransferServiceTest {
 
         // Garante que o banco NUNCA foi chamado já que a validação barrou antes
         verify(transferPersistencePort, never()).save(any(Transfer.class));
+
+        // Garante que o evento Kafka NUNCA foi publicado já que a validação barrou antes
+        verify(transferEventPublisherPort, never()).publishTransferCreated(any(Transfer.class));
     }
 }

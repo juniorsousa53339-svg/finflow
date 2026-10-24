@@ -28,7 +28,7 @@ public class TransferJpaAdapter implements TransferPersistencePort {
 
         // Passo C: O Domínio não pode receber 'TransferJpaEntity' de volta,
         // ele só fala a língua de Domínio ('Transfer').
-        // Então usamos o mapper novamente para traduzir de volta para 'Transfer'.
+        // Então usamos o mapper novamente para traduzir de voltaxc      para 'Transfer'.
         return transferPersistenceMapper.toDomain(savedEntity);
     }
 }
