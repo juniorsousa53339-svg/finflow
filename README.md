@@ -16,7 +16,7 @@ O **FinFlow** é um projeto de estudo e portfólio criado para simular o fluxo d
 
 - Domínio de **Java 17** e **Spring Boot** em aplicações corporativas.
 - Construção de **APIs REST** robustas com validação e tratamento de exceções.
-- Modelagem de dados relacional com **Spring Data JPA** e **PostgreSQL**.
+- Modelagem de dados relacional com **Spring Data JPA** e **PostgreSQL** (além de H2 para testes).
 - Arquitetura orientada a microsserviços com comunicação assíncrona usando **Apache Kafka**.
 - Garantia de consistência, transacionabilidade e **idempotência**.
 - Testes automatizados rigorosos com **JUnit 5** e **Mockito** (unitários e de integração).
@@ -25,45 +25,40 @@ O **FinFlow** é um projeto de estudo e portfólio criado para simular o fluxo d
 
 ---
 
-## 🏗️ Arquitetura Planejada
+## 🏗️ Arquitetura e Estado Atual
 
-O sistema é construído de forma incremental e será dividido em dois microsserviços principais:
+O sistema é construído de forma incremental e dividido em dois microsserviços principais:
 
-1. **`transfer-service`** (Microsserviço atual):
-   - Responsável por receber requisições de transferência.
-   - Validação de regras de negócio de entrada, dados de contas e saldo (futuro).
-   - Persistência inicial dos registros de transferência.
-2. **`processing-service`** (Microsserviço futuro):
-   - Responsável pelo processamento assíncrono das transferências.
-   - Consumo de eventos via mensageria (Kafka).
-   - Implementação de filas de retry, tratamento de falhas e políticas de resiliência.
+1. **`transfer-service`** (Microsserviço atual — **Implementado & Validado ✅**):
+   - Recebimento de solicitações de transferência via API REST (`POST /transfers`).
+   - Validação de entradas (Bean Validation) e regras de negócio no Domínio.
+   - Persistência de dados utilizando Spring Data JPA (suporte a H2 e PostgreSQL).
+   - Publicação assíncrona de eventos de transferência criada (`finflow.transfer.requested`) via **Apache Kafka**.
+   - Tratamento centralizado de exceções (`GlobalExceptionHandler`).
+   - Testes unitários e de contexto automatizados com JUnit 5 e Mockito.
+
+2. **`processing-service`** (Microsserviço futuro — **Próximo Passo 🚀**):
+   - Processamento assíncrono das transferências recebidas.
+   - Consumo de eventos via `@KafkaListener`.
+   - Atualização de status da transferência, regras de antifraude/saldo e políticas de resiliência (Retry / DLQ).
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
-### Tecnologias Utilizadas (Confirmadas no projeto)
-- **Java 17**
-- **Spring Boot** (v4.1.1)
-  - Spring WebMVC
+- **Linguagem & Framework:** Java 17, Spring Boot (v4.1.1)
+  - Spring WebMVC & Bean Validation
   - Spring Data JPA
   - Spring for Apache Kafka
-  - Spring Boot Validation
   - Spring Boot DevTools
-- **Maven** (com Maven Wrapper)
-- **Project Lombok**
-- **JUnit 5 & Mockito** (via Spring Boot Test)
-
-### Tecnologias Planejadas / Em Configuração
-- **Banco de Dados:** PostgreSQL
-- **Mensageria:** Apache Kafka (com Docker Compose)
-- **Documentação de API:** OpenAPI / Swagger UI
-- **Containerização:** Docker & Docker Compose
-- **Pipeline CI/CD:** GitHub Actions
+- **Banco de Dados:** PostgreSQL (Docker) & H2 Database (Testes)
+- **Mensageria:** Apache Kafka & Zookeeper (via Docker Compose)
+- **Build & Ferramentas:** Maven (Maven Wrapper), Project Lombok
+- **Testes:** JUnit 5, Mockito, Spring Boot Test
 
 ---
 
-## 📁 Estrutura do Repositório
+## 📁 Estrutura Atual do Repositório (`transfer-service`)
 
 ```text
 transfer-service/
@@ -71,12 +66,17 @@ transfer-service/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/finflow/transfer/
+│   │   │   ├── adapter/in/web/       # Controllers e DTOs REST
+│   │   │   ├── adapter/out/          # Adaptadores JPA e Kafka (Publisher)
+│   │   │   ├── application/service/  # Casos de uso e serviços de aplicação
+│   │   │   ├── domain/               # Modelos de domínio, exceções e portas
 │   │   │   └── TransferServiceApplication.java
 │   │   └── resources/
-│   │       └── application.properties
+│   │       ├── application.properties         # Configuração H2 (Desenvolvimento/Testes)
+│   │       └── application-docker.properties  # Configuração PostgreSQL & Docker
 │   └── test/
-│       └── java/com/finflow/transfer/
-│           └── TransferServiceApplicationTests.java
+│       └── java/com/finflow/transfer/         # Testes automatizados (JUnit 5 / Mockito)
+├── docker-compose.yml     # Orquestração Docker (Postgres, Kafka, Zookeeper)
 ├── CLAUDE.md              # Diretrizes de desenvolvimento e contexto para IA
 ├── README.md              # Documentação do projeto
 ├── pom.xml                # Gerenciamento de dependências e build
@@ -85,48 +85,54 @@ transfer-service/
 
 ---
 
-## 🚀 Como Executar o Projeto (Desenvolvimento)
+## 🚀 Como Executar o Projeto
 
-### Pré-requisitos
-- **Java JDK 17** instalado e configurado nas variáveis de ambiente.
-- Maven (ou utilize o Maven Wrapper incluído `mvnw`).
-
-### 1. Clonar o Repositório
-```bash
-git clone https://github.com/juniorsousa53339-svg/finflow.git
-cd transfer-service
+### 1. Subir a Infraestrutura (Docker Compose)
+Na raiz do projeto, suba o PostgreSQL e o Kafka:
+```powershell
+docker compose up -d
 ```
 
-### 2. Executar os Testes
-```bash
-# No Windows (PowerShell)
+### 2. Executar os Testes Automatizados
+```powershell
 & .\mvnw.cmd test
+```
 
-# No Linux / macOS
-./mvnw test
+### 3. Rodar a Aplicação
+```powershell
+# Com H2 em memória (padrão)
+& .\mvnw.cmd spring-boot:run
+
+# Com perfil Docker (conectado ao PostgreSQL)
+& .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=docker"
 ```
 
 ---
 
 ## 🗺️ Roadmap de Evolução
 
-- [x] **Etapa 1:** Fundação, configuração inicial do projeto Spring Boot e estruturação do ambiente.
-- [ ] **Etapa 2:** Desenvolvimento do `transfer-service` (Domínio, DTOs, Controllers REST, Validações e Persistência H2/PostgreSQL).
-- [ ] **Etapa 3:** Camada de banco de dados relacional (PostgreSQL), transações e tratamento robusto de erros.
-- [ ] **Etapa 4:** Criação do `processing-service` e definição de contratos entre serviços.
-- [ ] **Etapa 5:** Implementação de mensageria com Apache Kafka para processamento assíncrono.
-- [ ] **Etapa 6:** Infraestrutura com Docker Compose, documentação OpenAPI e CI/CD com GitHub Actions.
-- [ ] **Etapa 7:** Revisão geral de código, segurança, testes de regressão e preparação para apresentação técnica.
+- [x] **Etapa 1:** Configuração inicial do projeto Spring Boot e arquitetura base.
+- [x] **Etapa 2:** Implementação do `transfer-service` (Domínio, Portas, Casos de Uso, Adapters REST e Bean Validation).
+- [x] **Etapa 3:** Camada de persistência relacional (JPA, H2 e PostgreSQL) e Global Exception Handler.
+- [x] **Etapa 4:** Integração com mensageria assíncrona (Apache Kafka Producer).
+- [ ] **Etapa 5:** Criação do `processing-service` (Microsserviço de processamento).
+- [ ] **Etapa 6:** Consumo de eventos via Kafka `@KafkaListener` no `processing-service` e atualização de status.
+- [ ] **Etapa 7:** Documentação da API (OpenAPI/Swagger) e pipeline de CI/CD (GitHub Actions).
+
+---
+
+## 🧭 Próximos Passos para Conclusão
+1. **Desenvolvimento do `processing-service`:** Criar o segundo microsserviço Spring Boot dedicado ao consumo assíncrono.
+2. **Consumo via Kafka:** Implementar o listener no novo serviço para escutar o tópico `finflow.transfer.requested`.
+3. **Evolução de Status:** Atualizar o ciclo de vida da transferência (PENDING -> PROCESSING -> COMPLETED/FAILED).
 
 ---
 
 ## 🤖 Engenharia Assistida por IA & Arquitetura de Agentes
 
-O **FinFlow** foi concebido e desenvolvido utilizando práticas avançadas de **Desenvolvimento Orientado por IA (AI-Driven Development)**, servindo como um case prático de colaboração humano-IA na engenharia de software moderna:
-
-- **Human-in-the-Loop (Tech Lead & Tomada de Decisão):** O desenvolvedor (Luciano Junior) atua como o arquiteto principal, definindo os requisitos de negócio, decisões arquiteturais e padrões de projeto. A IA atua como mentora sênior e parceira técnica de desenvolvimento.
-- **Uso de Agentes Especializados:** O ecossistema do projeto conta com agentes customizados (*FinFlow Mentor* para orientação arquitetural/backend em Java/Spring Boot e *FinFlow QA / Test Engineer* para estratégia de testes e qualidade).
-- **Governança via Contexto (`CLAUDE.md`):** Definição de regras de desenvolvimento, padrões de commit, diretrizes de segurança e escopo técnico versionados diretamente no repositório, garantindo autonomia e alinhamento com padrões corporativos.
+O **FinFlow** foi concebido utilizando práticas avançadas de **Desenvolvimento Orientado por IA**:
+- **Human-in-the-Loop (Tech Lead):** O desenvolvedor (Luciano Junior) atua como o arquiteto principal, tomando decisões técnicas fundamentadas, enquanto a IA atua como mentora sênior.
+- **Agentes Especializados:** Uso de agentes customizados para orientação arquitetural (`finflow-mentor`) e qualidade de testes (`finflow-qa`).
 
 ---
 
@@ -138,4 +144,4 @@ Projeto desenvolvido por **Luciano Junior** (Estudante de Análise e Desenvolvim
 
 ## 📄 Licença
 
-Este projeto é distribuído sob a licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
+Este projecto é distribuído sob a licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
