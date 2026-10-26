@@ -25,7 +25,7 @@ public class TransferService implements CreateTransferUseCase {
 
     @Override
     public Transfer createTransfer(Transfer transfer) {
-        // 1. Valida as regras de negócio
+
         validarRegrasTransferencia(transfer);
 
         // 2. Persiste a transferência no banco de dados (status inicial PENDING/CREATED)

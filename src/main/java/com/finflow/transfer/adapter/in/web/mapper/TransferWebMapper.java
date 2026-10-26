@@ -21,8 +21,9 @@ public class TransferWebMapper {
         transfer.setStatus(Status.PENDING);  // Toda Transferencia nasce pendente
         return transfer;
     }
+
     // Converte o modelo de Domínio para Response DTO da API
-    public TransferResponseDTO toResponseDTO (Transfer transfer) {
+    public TransferResponseDTO toResponseDTO(Transfer transfer) {
         if (transfer == null) {
             return null;
         }
