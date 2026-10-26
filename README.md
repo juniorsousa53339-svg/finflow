@@ -58,29 +58,25 @@ O sistema é construído de forma incremental e dividido em dois microsserviços
 
 ---
 
-## 📁 Estrutura Atual do Repositório (`transfer-service`)
+## 📁 Estrutura do Repositório (Monorepo)
 
 ```text
-transfer-service/
-├── .mvn/                  # Maven Wrapper
-├── src/
-│   ├── main/
-│   │   ├── java/com/finflow/transfer/
-│   │   │   ├── adapter/in/web/       # Controllers e DTOs REST
-│   │   │   ├── adapter/out/          # Adaptadores JPA e Kafka (Publisher)
-│   │   │   ├── application/service/  # Casos de uso e serviços de aplicação
-│   │   │   ├── domain/               # Modelos de domínio, exceções e portas
-│   │   │   └── TransferServiceApplication.java
-│   │   └── resources/
-│   │       ├── application.properties         # Configuração H2 (Desenvolvimento/Testes)
-│   │       └── application-docker.properties  # Configuração PostgreSQL & Docker
-│   └── test/
-│       └── java/com/finflow/transfer/         # Testes automatizados (JUnit 5 / Mockito)
-├── docker-compose.yml     # Orquestração Docker (Postgres, Kafka, Zookeeper)
-├── CLAUDE.md              # Diretrizes de desenvolvimento e contexto para IA
-├── README.md              # Documentação do projeto
-├── pom.xml                # Gerenciamento de dependências e build
-└── mvnw / mvnw.cmd        # Scripts de execução do Maven
+finflow/ (transfer-service)
+├── transfer-service/          # Microsserviço 1: Entrada REST & Produtor Kafka
+│   ├── src/main/java/com/finflow/transfer/
+│   │   ├── adapter/           # Adaptadores REST e JPA/Kafka Publisher
+│   │   ├── application/       # Serviços de aplicação / Casos de uso
+│   │   └── domain/            # Domínio, Modelos, Portas e Exceções
+│   └── pom.xml
+├── processing-service/        # Microsserviço 2: Consumidor Kafka & Processamento
+│   ├── src/main/java/com/finflow/processing/
+│   │   ├── adapter/           # Consumidor Kafka e Persistência JPA
+│   │   ├── application/       # Casos de uso de processamento
+│   │   └── domain/            # Domínio, Portas e Status
+│   └── pom.xml
+├── .claude/                   # Agentes e configuração de IA
+├── docs/                      # Documentação de arquitetura e roadmap
+└── README.md
 ```
 
 ---
@@ -115,7 +111,7 @@ docker compose up -d
 - [x] **Etapa 2:** Implementação do `transfer-service` (Domínio, Portas, Casos de Uso, Adapters REST e Bean Validation).
 - [x] **Etapa 3:** Camada de persistência relacional (JPA, H2 e PostgreSQL) e Global Exception Handler.
 - [x] **Etapa 4:** Integração com mensageria assíncrona (Apache Kafka Producer).
-- [ ] **Etapa 5:** Criação do `processing-service` (Microsserviço de processamento).
+- [x] **Etapa 5:** Criação e estruturação do `processing-service` (Arquitetura Hexagonal, Configuração Kafka/JPA).
 - [ ] **Etapa 6:** Consumo de eventos via Kafka `@KafkaListener` no `processing-service` e atualização de status.
 - [ ] **Etapa 7:** Documentação da API (OpenAPI/Swagger) e pipeline de CI/CD (GitHub Actions).
 
