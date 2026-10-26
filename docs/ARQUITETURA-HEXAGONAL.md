@@ -1,272 +1,249 @@
-# 🏛️ Arquitetura Hexagonal — Guia de Referência do FinFlow
+# 🏛️ Arquitetura Hexagonal — Guia de Referência e Estudo do FinFlow
 
-> Documento criado para estudo e revisão. Explica cada camada, cada pacote e o passo a passo de implementação.
+> **Material de Estudo Definitivo:** Este documento foi estruturado para ser utilizado lado a lado com o código-fonte do `transfer-service`. O objetivo é servir como um mapa conceitual e prático para você entender o papel de cada pacote, cada classe, as decisões de design e o fluxo de execução do sistema.
 
 ---
 
 ## 1. O que é Arquitetura Hexagonal?
 
-Criada por **Alistair Cockburn**, também chamada de **Ports & Adapters**.
+Criada por **Alistair Cockburn**, a Arquitetura Hexagonal também é conhecida como **Ports & Adapters** (Portas e Adaptadores).
 
-**Problema que resolve:** Em projetos tradicionais, a lógica de negócio fica misturada com frameworks (JPA, Spring MVC, Kafka). Se você trocar o banco de dados, precisa reescrever regras de negócio. Se quiser testar uma regra, precisa subir o Spring inteiro.
+### O Problema que Resolve
+Em aplicações tradicionais em camadas (Controller → Service → Repository), a lógica de negócio costuma ficar acoplada a frameworks e tecnologias externas (como anotações do Spring Data JPA, Hibernate, Jackson ou drivers de mensageria). Se você precisar trocar o banco de dados relacional por um NoSQL, ou alterar a forma de comunicação, acaba tendo que mexer nas regras de negócio. Além disso, testar a regra de negócio exige subir o contexto do framework inteiro.
 
-**Solução:** Separar o sistema em 3 zonas com uma regra simples:
+### A Solução da Arquitetura Hexagonal
+A divisão do sistema em zonas concêntricas orientadas por uma **regra de ouro**:
 
-> **O domínio (regras de negócio) não conhece NADA do mundo externo. O mundo externo é que se adapta ao domínio.**
-
----
-
-## 2. As 3 Zonas
-
-```
-┌──────────────────────────────────────────────────────┐
-│               ADAPTERS (Mundo Externo)                │
-│                                                       │
-│   ┌────────────┐                  ┌────────────────┐  │
-│   │ Controller │                  │ JPA Repository │  │
-│   │   (REST)   │                  │  (Banco)       │  │
-│   └─────┬──────┘                  └───────┬────────┘  │
-│         │                                 │           │
-│   ┌─────▼─────────────────────────────────▼────────┐  │
-│   │               PORTS (Contratos)                │  │
-│   │                                                │  │
-│   │   Port IN (interface)      Port OUT (interface) │  │
-│   │   "o que posso pedir"      "o que preciso       │  │
-│   │                             de fora"             │  │
-│   └─────┬──────────────────────────────────┬───────┘  │
-│         │                                  │          │
-│         │       ┌──────────────────┐       │          │
-│         └──────►│     DOMAIN       │◄──────┘          │
-│                 │  (Regras Puras)  │                  │
-│                 └──────────────────┘                  │
-└──────────────────────────────────────────────────────┘
-```
-
-| Zona | Responsabilidade | Depende de framework? |
-|------|------------------|-----------------------|
-| **Domain** | Regras de negócio, entidades, enums | ❌ NUNCA |
-| **Port** | Contratos (interfaces) entre domínio e mundo externo | ❌ NUNCA |
-| **Adapter** | Implementações concretas (REST, JPA, Kafka...) | ✅ Sim |
+> **O Domínio (regras de negócio puras) é o centro absoluto da aplicação. Ele não conhece NADA do mundo externo (frameworks, banco de dados, mensageria, HTTP). O mundo externo é que se adapta ao Domínio através de Contratos (Ports).**
 
 ---
 
-## 3. Estrutura de Pacotes do FinFlow
+## 2. As 3 Zonas da Arquitetura
 
 ```
-com.finflow.transfer/
+┌────────────────────────────────────────────────────────────────────────┐
+│                        ADAPTERS (Mundo Externo)                        │
+│                                                                        │
+│   ┌────────────────┐      ┌─────────────────┐      ┌───────────────┐   │
+│   │   Controller   │      │  JPA Repository │      │ Kafka Adapter │   │
+│   │    (REST)      │      │    (Banco)      │      │  (Mensageria) │   │
+│   └───────┬────────┘      └────────┬────────┘      └───────┬───────┘   │
+│           │                        │                       │           │
+│   ┌───────▼────────────────────────▼───────────────────────▼────────┐  │
+│   │                          PORTS (Contratos)                      │  │
+│   │                                                                 │  │
+│   │   Port IN (Interfaces de Entrada)    Port OUT (Interfaces de Saída)│  │
+│   │   "O que o mundo pede ao domínio"    "O que o domínio precisa"  │  │
+│   └───────┬────────────────────────────────────────────────┬────────┘  │
+│           │                                                │           │
+│           │               ┌──────────────────┐             │           │
+│           └──────────────►│      DOMAIN      │◄────────────┘           │
+│                           │  (Regras Puras)  │                         │
+│                           └──────────────────┘                         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+| Zona | Responsabilidade Principal | Depende de Frameworks? |
+| :--- | :--- | :--- |
+| **Domain** | Entidades de negócio, enums, exceções de negócio, interfaces de portas (in/out). | ❌ **NUNCA** (Java puro) |
+| **Application** | Orquestração de casos de uso, implementação das portas de entrada. | ⚠️ Neutro / Pode usar `@Service` |
+| **Adapter** | Implementações concretas de tecnologia (Controllers REST, JPA entities/repositories, Kafka producers). | ✅ **Sim** (Spring, JPA, Kafka, etc.) |
+
+---
+
+## 3. Estrutura Atual de Pacotes e Classes (`transfer-service`)
+
+Abaixo está o mapeamento fiel da árvore de diretórios do projeto:
+
+```text
+src/main/java/com/finflow/transfer/
 │
-├── domain/                              ← 🧠 NÚCLEO
+├── TransferServiceApplication.java          ← Ponto de entrada do Spring Boot
+│
+├── domain/                                  ← 🧠 NÚCLEO DA APLICAÇÃO (Regras Puras)
 │   ├── model/
-│   │   ├── Transfer.java                ← POJO puro (sem @Entity!)
-│   │   └── Status.java                  ← Enum de domínio
+│   │   ├── Transfer.java                    ← POJO puro de domínio
+│   │   └── Status.java                      ← Enum de estados da transferência
+│   │
 │   ├── port/
 │   │   ├── in/
-│   │   │   └── CreateTransferUseCase.java   ← Interface de entrada
+│   │   │   └── CreateTransferUseCase.java   ← Porta de Entrada (Caso de uso)
 │   │   └── out/
-│   │       └── TransferPersistencePort.java  ← Interface de saída
+│   │       ├── TransferPersistencePort.java  ← Porta de Saída (Persistência)
+│   │       └── TransferEventPublisherPort.java ← Porta de Saída (Mensageria/Kafka)
+│   │
 │   └── exception/
-│       ├── BusinessRuleException.java
-│       └── ResourceNotFoundException.java
+│       ├── BusinessRuleException.java       ← Exceção para regras de negócio violadas
+│       └── ResourceNotFoundException.java   ← Exceção para recursos não encontrados
 │
-├── application/                         ← ⚙️ ORQUESTRAÇÃO
+├── application/                             ← ⚙️ CASOS DE USO E ORQUESTRAÇÃO
 │   └── service/
-│       └── TransferService.java         ← Implementa ports IN, usa ports OUT
+│       └── TransferService.java             ← Implementa o CreateTransferUseCase
 │
-├── adapter/                             ← 🔌 MUNDO EXTERNO
+├── adapter/                                 ← 🔌 ADAPTADORES (Mundo Externo / Frameworks)
 │   ├── in/
 │   │   └── web/
-│   │       ├── TransferController.java
+│   │       ├── TransferController.java      ← Endpoint REST POST /transfers
+│   │       ├── GlobalExceptionHandler.java  ← Tratamento global de exceções HTTP
 │   │       ├── dto/
-│   │       │   ├── TransferRequestDTO.java
-│   │       │   └── TransferResponseDTO.java
+│   │       │   ├── TransferRequestDTO.java  ← DTO de entrada validados (Bean Validation)
+│   │       │   └── TransferResponseDTO.java ← DTO de saída da API
 │   │       └── mapper/
-│   │           └── TransferWebMapper.java
+│   │           └── TransferWebMapper.java   ← Tradutor RequestDTO ↔ Domain ↔ ResponseDTO
+│   │
 │   └── out/
-│       └── persistence/
-│           ├── TransferJpaAdapter.java       ← Implementa port OUT
-│           ├── entity/
-│           │   └── TransferJpaEntity.java    ← @Entity do JPA
-│           ├── mapper/
-│           │   └── TransferPersistenceMapper.java
-│           └── repository/
-│               └── TransferJpaRepository.java  ← JpaRepository
+│       ├── persistence/
+│       │   ├── TransferJpaAdapter.java      ← Implementa TransferPersistencePort (JPA)
+│       │   ├── entity/
+│       │   │   └── TransferJpaEntity.java   ← Entidade JPA (@Entity, @Table)
+│       │   ├── mapper/
+│       │   │   └── TransferPersistenceMapper.java ← Tradutor Domain ↔ JPA Entity
+│       │   └── repository/
+│       │       └── TransferJpaRepository.java ← Spring Data JPA Repository
+│       │
+│       └── messaging/
+│           ├── KafkaTransferPublisherAdapter.java ← Implementa TransferEventPublisherPort (Kafka)
+│           └── TransferCreatedEvent.java    ← DTO/Payload do evento enviado ao Kafka
 │
-└── config/
-    └── BeanConfiguration.java           ← Cola tudo com @Bean
+└── config/                                  ← 🛠️ CONFIGURAÇÕES DE INFRAESTRUTURA
+    └── BeanConfiguration.java               ← Configuração adicional de beans (se necessário)
 ```
 
 ---
 
-## 4. Explicação de cada pacote
+## 4. Guia Detalhado: Pacotes, Classes e Responsabilidades
 
-### 4.1 `domain/model/` — O Coração
+### 4.1 Pacote `domain/` (O Coração)
+O domínio contém a essência do negócio. Nenhuma classe aqui possui anotações do Spring (`@Service`, `@Entity`, `@RestController`) ou bibliotecas de infraestrutura.
 
-Classes que representam **o que o sistema É**, sem nenhuma dependência de framework.
-
-- **`Transfer.java`** — Um POJO puro com os atributos: id, sourceAccount, destinationAccount, amount, status, createdAt, updatedAt.
-- **`Status.java`** — Enum com os estados: PENDING, PROCESSING, COMPLETED, FAILED.
-
-**Regra de ouro:** Se você deletar o Spring Boot, o Maven, tudo — esse pacote continua compilando com `javac` puro.
-
-### 4.2 `domain/port/in/` — Portas de Entrada
-
-Interfaces que definem **o que o mundo externo pode pedir ao domínio**.
-
-```java
-public interface CreateTransferUseCase {
-    Transfer createTransfer(Transfer transfer);
-}
-```
-
-O Controller chama essa interface. Ele não sabe (e não precisa saber) quem implementa.
-
-**Analogia:** O cardápio do restaurante. O cliente faz o pedido sem saber quem é o cozinheiro.
-
-### 4.3 `domain/port/out/` — Portas de Saída
-
-Interfaces que definem **o que o domínio precisa do mundo externo**.
-
-```java
-public interface TransferPersistencePort {
-    Transfer save(Transfer transfer);
-    Optional<Transfer> findById(Long id);
-    List<Transfer> findAll();
-}
-```
-
-O Service usa essa interface. Não sabe se por trás é JPA, MongoDB, ou um arquivo de texto.
-
-**Analogia:** A porta USB-C do celular. O celular não sabe se está na tomada ou no carro.
-
-### 4.4 `domain/exception/` — Exceções de Negócio
-
-Exceções que representam erros do **negócio**, não do framework:
-- `BusinessRuleException` — conta de origem igual à de destino, por exemplo.
-- `ResourceNotFoundException` — transferência não encontrada.
-
-### 4.5 `application/service/` — O Orquestrador
-
-```java
-public class TransferService implements CreateTransferUseCase {
-
-    private final TransferPersistencePort persistencePort;
-
-    // Recebe o port de saída por construtor (injeção de dependência)
-    // Implementa o port de entrada
-    // Contém regras de orquestração
-}
-```
-
-**Analogia:** O gerente do restaurante. Recebe o pedido (port in), coordena o preparo, e manda entregar (port out).
-
-### 4.6 `adapter/in/web/` — Adapter REST (Entrada)
-
-Recebe requisições HTTP e **traduz** para o domínio:
-- **Controller** — `@RestController`, recebe DTOs, chama o use case
-- **DTOs** — `TransferRequestDTO`, `TransferResponseDTO` (records Java)
-- **Mapper** — Converte DTO → modelo de domínio e vice-versa
-
-**Regra:** O Controller NUNCA chama o repository diretamente. Ele só conhece o port de entrada.
-
-### 4.7 `adapter/out/persistence/` — Adapter JPA (Saída)
-
-Implementa o port de saída usando JPA:
-- **`TransferJpaEntity.java`** — A classe com `@Entity`, `@Table` (anotações JPA ficam AQUI, não no domínio!)
-- **`TransferJpaRepository.java`** — O `JpaRepository<TransferJpaEntity, Long>` do Spring Data
-- **`TransferPersistenceMapper.java`** — Converte JPA Entity ↔ modelo de domínio
-- **`TransferJpaAdapter.java`** — Implementa `TransferPersistencePort`, usa o repository internamente
-
-### 4.8 `config/` — Configuração Spring
-
-O `TransferService` não tem `@Service` (pra não depender do Spring). Então usamos um `@Configuration` com `@Bean` para dizer ao Spring: "quando alguém pedir um `CreateTransferUseCase`, use o `TransferService`".
-
-```java
-@Configuration
-public class BeanConfiguration {
-
-    @Bean
-    public CreateTransferUseCase createTransferUseCase(TransferPersistencePort port) {
-        return new TransferService(port);
-    }
-}
-```
+*   **`domain/model/Transfer.java`**:
+    *   *O que faz:* Representa o objeto de negócio Transferência no seu estado mais puro.
+    *   *Por que existe:* Contém os atributos fundamentais (`id`, `sourceAccount`, `destinationAccount`, `amount`, `status`, `createdAt`, `updatedAt`) e métodos de negócio, sem acoplamento com banco de dados.
+*   **`domain/model/Status.java`**:
+    *   *O que faz:* Enum que define os estados possíveis de uma transferência (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`).
+*   **`domain/port/in/CreateTransferUseCase.java`**:
+    *   *O que faz:* **Porta de Entrada (Input Port)**. É uma interface que define o contrato do caso de uso de criação de transferência.
+    *   *Assinatura:* `Transfer createTransfer(Transfer transfer);`
+    *   *Por que existe:* O Controller interage exclusivamente com esta interface, ignorando totalmente quem é o executor real.
+*   **`domain/port/out/TransferPersistencePort.java`**:
+    *   *O que faz:* **Porta de Saída (Output Port)** para persistência. Define o contrato de o que o domínio precisa para salvar ou buscar dados.
+    *   *Assinatura:* `Transfer save(Transfer transfer);`
+    *   *Por que existe:* O serviço de domínio chama essa interface quando precisa persistir dados, sem saber se por trás há PostgreSQL, MongoDB ou arquivo texto.
+*   **`domain/port/out/TransferEventPublisherPort.java`**:
+    *   *O que faz:* **Porta de Saída (Output Port)** para mensageria. Define o contrato para publicação de eventos de domínio.
+    *   *Assinatura:* `void publishTransferCreated(Transfer transfer);`
+    *   *Por que existe:* Permite que o domínio solicite a publicação de um evento (ex: "transferência criada") sem saber que a tecnologia utilizada é o Apache Kafka.
+*   **`domain/exception/BusinessRuleException.java` & `ResourceNotFoundException.java`**:
+    *   *O que faz:* Exceções customizadas de domínio para representar falhas de regras de negócio (ex: conta de origem igual à de destino) ou recursos ausentes.
 
 ---
 
-## 5. Regra das Dependências (a mais importante!)
+### 4.2 Pacote `application/` (Orquestração)
+*   **`application/service/TransferService.java`**:
+    *   *O que faz:* Implementa a porta de entrada (`CreateTransferUseCase`). É o orquestrador do caso de uso.
+    *   *Como funciona:*
+        1. Valida regras de negócio puras (ex: origem ≠ destino).
+        2. Chama a porta de saída de persistência (`TransferPersistencePort`) para salvar a transferência.
+        3. Chama a porta de saída de mensageria (`TransferEventPublisherPort`) para notificar o sistema via Kafka.
+    *   *Por que existe:* Centraliza o fluxo da transação de negócio sem se prender aos detalhes HTTP ou detalhes de driver de banco/kafka.
 
-As setas de dependência SEMPRE apontam para o domínio. O domínio NUNCA aponta para fora.
+---
+
+### 4.3 Pacote `adapter/in/web/` (Entrada REST)
+Responsável por expor a aplicação via API HTTP REST.
+
+*   **`TransferController.java`**:
+    *   *O que faz:* `@RestController` mapeado em `/transfers`. Recebe requisições HTTP POST.
+    *   *Relacionamento:* Injeta o `CreateTransferUseCase` (porta de entrada) e o `TransferWebMapper`. **Nunca** chama repositórios diretamente.
+*   **`GlobalExceptionHandler.java`**:
+    *   *O que faz:* `@RestControllerAdvice` que intercepta exceções lançadas pelo domínio/serviço (como `BusinessRuleException` e `ResourceNotFoundException`) e as traduz em respostas HTTP adequadas (`409 Conflict`, `404 Not Found`).
+*   **`dto/TransferRequestDTO.java` & `TransferResponseDTO.java`**:
+    *   *O que faz:* Objetos de transferência de dados (Records/Classes Java) usados na borda da API. Contêm anotações de validação (`@NotNull`, `@Positive`, etc.).
+*   **`mapper/TransferWebMapper.java`**:
+    *   *O que faz:* Traduz o `TransferRequestDTO` em objeto de Domínio (`Transfer`), e o objeto de Domínio em `TransferResponseDTO`.
+
+---
+
+### 4.4 Pacote `adapter/out/persistence/` (Saída - Banco de Dados)
+Responsável pela persistência relacional utilizando Spring Data JPA.
+
+*   **`entity/TransferJpaEntity.java`**:
+    *   *O que faz:* A entidade JPA (`@Entity`, `@Table(name = "transfers")`). Contém todas as anotações de banco de dados. Fica estritamente no adapter, isolada do domínio.
+*   **`repository/TransferJpaRepository.java`**:
+    *   *O que faz:* Interface que estende `JpaRepository<TransferJpaEntity, Long>`, fornecendo métodos prontos de CRUD do Spring Data.
+*   **`mapper/TransferPersistenceMapper.java`**:
+    *   *O que faz:* Converte a entidade de domínio (`Transfer`) para entidade JPA (`TransferJpaEntity`) e vice-versa.
+*   **`TransferJpaAdapter.java`**:
+    *   *O que faz:* Implementa a porta de saída `TransferPersistencePort`. Utiliza internamente o `TransferJpaRepository` e o `TransferPersistenceMapper` para realizar as operações no banco.
+
+---
+
+### 4.5 Pacote `adapter/out/messaging/` (Saída - Mensageria Kafka)
+Responsável pela integração assíncrona via Apache Kafka.
+
+*   **`TransferCreatedEvent.java`**:
+    *   *O que faz:* DTO/Payload que representa o evento publicado no broker de mensageria. Desacopla a estrutura da mensagem Kafka da entidade de domínio ou de banco.
+*   **`KafkaTransferPublisherAdapter.java`**:
+    *   *O que faz:* Implementa a porta de saída `TransferEventPublisherPort`. Utiliza o `KafkaTemplate<String, Object>` do Spring for Apache Kafka para enviar o `TransferCreatedEvent` para o tópico `finflow.transfer.requested`.
+
+---
+
+### 4.6 Pacote `config/`
+*   **`BeanConfiguration.java`**:
+    *   *O que faz:* Local para configurações adicionais de Beans Spring (caso necessário para injeções específicas ou configuração de componentes customizados).
+
+---
+
+## 5. A Regra de Ouro das Dependências
+
+As setas de dependência na arquitetura hexagonal **sempre apontam para o centro (Domínio)**.
 
 ```
-adapter/in/web  ───►  domain (ports/in)  ◄───  application/service
-                                                      │
-                                                      ▼
-                       domain (ports/out)  ◄───  adapter/out/persistence
+adapter/in/web  ──────►  domain/port/in  ◄──────  application/service
+                                                          │
+                                                          ▼
+                         domain/port/out  ◄──────  adapter/out/persistence
+                         domain/port/out  ◄──────  adapter/out/messaging
 ```
 
-- ✅ Controller conhece o Port de entrada → OK
-- ✅ Service implementa o Port de entrada → OK
-- ✅ Service usa o Port de saída → OK (usa a interface, não a implementação)
-- ✅ JpaAdapter implementa o Port de saída → OK
-- ❌ Service importa JpaRepository → PROIBIDO
-- ❌ Domain importa Spring/JPA → PROIBIDO
+### O que é permitido vs. Proibido:
+*   ✅ **Controller** conhece o **Port de Entrada** (UseCase).
+*   ✅ **Service** implementa o **Port de Entrada** e injeta os **Ports de Saída**.
+*   ✅ **Adapters** (Web, Persistence, Messaging) dependem das interfaces do **Domínio**.
+*   ❌ **Domínio** **NUNCA** importa classes de `adapter` ou `application`.
+*   ❌ **Domínio** **NUNCA** possui anotações do Spring (`@Entity`, `@Service`, `@Autowired`).
+*   ❌ **Service** **NUNCA** importa bibliotecas de JPA (`JpaRepository`) ou Kafka (`KafkaTemplate`).
 
 ---
 
-## 6. Passo a passo da implementação
+## 6. Fluxo de Execução: O Ciclo de uma Transferência
 
-### Fase 1 — Domínio (criar primeiro, é independente)
-- [ ] `domain/model/Status.java` — copiar enum, mudar package
-- [ ] `domain/model/Transfer.java` — POJO puro (sem @Entity), com Getters/Setters
-- [ ] `domain/exception/BusinessRuleException.java` — copiar, mudar package
-- [ ] `domain/exception/ResourceNotFoundException.java` — copiar, mudar package
+Para entender o código na prática, acompanhe o passo a passo de uma requisição de criação de transferência:
 
-### Fase 2 — Ports (interfaces, sem implementação)
-- [ ] `domain/port/in/CreateTransferUseCase.java` — interface com método createTransfer()
-- [ ] `domain/port/out/TransferPersistencePort.java` — interface com save(), findById(), findAll()
-
-### Fase 3 — Application (implementa os use cases)
-- [ ] `application/service/TransferService.java` — implementa CreateTransferUseCase, usa TransferPersistencePort
-
-### Fase 4 — Adapters de Saída (persistência)
-- [ ] `adapter/out/persistence/entity/TransferJpaEntity.java` — @Entity com anotações JPA
-- [ ] `adapter/out/persistence/repository/TransferJpaRepository.java` — JpaRepository
-- [ ] `adapter/out/persistence/mapper/TransferPersistenceMapper.java` — Entity ↔ Domain
-- [ ] `adapter/out/persistence/TransferJpaAdapter.java` — implementa TransferPersistencePort
-
-### Fase 5 — Adapters de Entrada (web/REST)
-- [ ] `adapter/in/web/dto/TransferRequestDTO.java` — copiar/mover, mudar package
-- [ ] `adapter/in/web/dto/TransferResponseDTO.java` — copiar/mover, mudar package
-- [ ] `adapter/in/web/mapper/TransferWebMapper.java` — DTO ↔ Domain
-- [ ] `adapter/in/web/TransferController.java` — @RestController
-
-### Fase 6 — Configuração
-- [ ] `config/BeanConfiguration.java` — @Configuration com @Bean
-
-### Fase 7 — Limpeza
-- [ ] Deletar pacotes antigos (enums/, dto/, repository/, domain/Transfer.java antigo)
-- [ ] Deletar arquivos .gitkeep
-- [ ] Rodar testes: `.\mvnw.cmd test`
+1.  **Requisição HTTP:** O cliente envia um `POST /transfers` com um JSON contendo `sourceAccount`, `destinationAccount` e `amount`.
+2.  **Validação na Borda:** O Spring valida o `TransferRequestDTO` usando Bean Validation (`jakarta.validation`). Se inválido, retorna `400 Bad Request`.
+3.  **Controller & Mapper:** O `TransferController` recebe o DTO válido e chama o `TransferWebMapper` para converter o DTO em um objeto de Domínio (`Transfer`).
+4.  **Caso de Uso (Port In):** O Controller chama o método `createTransfer(Transfer)` na interface `CreateTransferUseCase` (implementada pelo `TransferService`).
+5.  **Regras de Negócio:** O `TransferService` executa as validações de negócio (ex: `validarRegrasTransferencia` verifica se a conta origem é diferente da destino). Se falhar, lança `BusinessRuleException`.
+6.  **Persistência (Port Out):** O `TransferService` chama `TransferPersistencePort.save(transfer)`.
+    *   O `TransferJpaAdapter` recebe o pedido, converte para `TransferJpaEntity` via `TransferPersistenceMapper`.
+    *   Salva no PostgreSQL usando o `TransferJpaRepository`.
+    *   Converte a entidade salva de volta para o modelo de domínio `Transfer`.
+7.  **Mensageria (Port Out):** O `TransferService` chama `TransferEventPublisherPort.publishTransferCreated(savedTransfer)`.
+    *   O `KafkaTransferPublisherAdapter` converte o domínio em `TransferCreatedEvent`.
+    *   Envia a mensagem de forma assíncrona para o tópico Kafka `finflow.transfer.requested` usando o `KafkaTemplate`.
+8.  **Resposta HTTP:** O `TransferService` retorna o objeto `Transfer` criado para o Controller. O Controller o converte em `TransferResponseDTO` via mapper e retorna `201 Created` com os dados da transferência.
+9.  **Tratamento de Exceções:** Caso ocorra qualquer exceção de negócio (`BusinessRuleException`) ou recurso não encontrado (`ResourceNotFoundException`) em qualquer camada, o `GlobalExceptionHandler` intercepta e retorna o status HTTP adequado (`409` ou `404`).
 
 ---
 
-## 7. Benefícios para mencionar em entrevistas
+## 7. Como Estudar Usando este Documento
 
-1. **Testabilidade** — Testo regras de negócio sem subir Spring, sem banco, sem nada.
-2. **Independência de framework** — Posso trocar JPA por MongoDB mudando só o adapter de saída.
-3. **Clareza** — Qualquer dev novo entende a estrutura em 5 minutos.
-4. **Manutenibilidade** — Mudanças ficam isoladas na camada certa.
-5. **Evolução** — Adicionar Kafka? É só criar um novo adapter de saída.
+1.  **Abra o documento de um lado e a IDE (com o código) do outro.**
+2.  **Navegue pacote por pacote** listados na Seção 3 e Seção 4.
+3.  **Verifique a ausência de acoplamento:** Abra `domain/model/Transfer.java` e certifique-se de que não há nenhuma anotação de banco de dados ou framework.
+4.  **Inspecione os contratos:** Olhe `CreateTransferUseCase.java` e perceba como ele é uma interface pura.
+5.  **Rastreie o fluxo:** Siga a execução desde o `TransferController` até o `TransferService`, passando pelo `TransferJpaAdapter` e `KafkaTransferPublisherAdapter`.
 
 ---
-
-## 8. Perguntas comuns em entrevistas
-
-**P: Qual a diferença entre Arquitetura Hexagonal e Clean Architecture?**
-R: São muito parecidas. A Hexagonal foca em Ports & Adapters. A Clean Architecture (Uncle Bob) adiciona mais camadas e a "Regra da Dependência". Na prática, a ideia central é a mesma: proteger o domínio.
-
-**P: Quando NÃO usar Hexagonal?**
-R: Em projetos muito pequenos (um CRUD simples), pode ser over-engineering. O custo de manter tantos pacotes e mappers pode não compensar. Use quando o domínio tem regras complexas ou quando precisa de flexibilidade para trocar tecnologias.
-
-**P: O TransferService pode ter @Service?**
-R: Pode, mas aí ele depende do Spring. Na hexagonal "pura", usamos @Bean no config. Em projetos reais, muitos times usam @Service por praticidade — e tudo bem. O importante é entender o trade-off.
+*Documento atualizado para refletir a arquitetura atual do FinFlow contendo Persistência JPA e Mensageria Kafka.*
