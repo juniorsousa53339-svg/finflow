@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor
 public class Transfer {
-
     private Long id;
     private Integer sourceAccount;
     private Integer destinationAccount;
