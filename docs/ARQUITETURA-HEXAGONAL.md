@@ -20,28 +20,9 @@ A divisão do sistema em zonas concêntricas orientadas por uma **regra de ouro*
 
 ## 2. As 3 Zonas da Arquitetura
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        ADAPTERS (Mundo Externo)                        │
-│                                                                        │
-│   ┌────────────────┐      ┌─────────────────┐      ┌───────────────┐   │
-│   │   Controller   │      │  JPA Repository │      │ Kafka Adapter │   │
-│   │    (REST)      │      │    (Banco)      │      │  (Mensageria) │   │
-│   └───────┬────────┘      └────────┬────────┘      └───────┬───────┘   │
-│           │                        │                       │           │
-│   ┌───────▼────────────────────────▼───────────────────────▼────────┐  │
-│   │                          PORTS (Contratos)                      │  │
-│   │                                                                 │  │
-│   │   Port IN (Interfaces de Entrada)    Port OUT (Interfaces de Saída)│  │
-│   │   "O que o mundo pede ao domínio"    "O que o domínio precisa"  │  │
-│   └───────┬────────────────────────────────────────────────┬────────┘  │
-│           │                                                │           │
-│           │               ┌──────────────────┐             │           │
-│           └──────────────►│      DOMAIN      │◄────────────┘           │
-│                           │  (Regras Puras)  │                         │
-│                           └──────────────────┘                         │
-└────────────────────────────────────────────────────────────────────────┘
-```
+
+<img width="707" height="551" alt="Arquitetura" src="https://github.com/user-attachments/assets/88385d04-48d0-4a01-a7bb-cde455713b29" />
+
 
 | Zona | Responsabilidade Principal | Depende de Frameworks? |
 | :--- | :--- | :--- |
