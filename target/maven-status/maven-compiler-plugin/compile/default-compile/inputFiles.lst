@@ -1,9 +1,0 @@
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\adapter\in\kafka\TransferKafkaConsumer.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\adapter\out\entity\TransferEntity.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\adapter\out\persistence\SpringDataTransferRepository.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\adapter\out\persistence\TransferPersistenceAdapter.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\application\service\TransferProcessService.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\domain\model\Status.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\domain\model\Transfer.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\domain\port\in\TransferUseCase.java
-C:\Users\Luciano Junior\Downloads\processing-service\src\main\java\com\finflow\processing\domain\port\out\TransferRepositoryPort.java
