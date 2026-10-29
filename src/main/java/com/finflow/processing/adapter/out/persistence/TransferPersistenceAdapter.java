@@ -14,22 +14,6 @@ public class TransferPersistenceAdapter implements TransferRepositoryPort {
 
     private final SpringDataTransferRepository repository;
 
-    @Override
-    public Transfer save(Transfer transfer) {
-        // 1. Converte domínio para entidade JPA, salva no banco e converte o resultado de volta para domínio
-        return toDomain(
-                repository.save(toEntity(transfer))
-        );
-    }
-
-    @Override
-    public Optional<Transfer> findById(Long id) {
-        // Busca no banco e se encontrar a Entity, mapeia (converte) para o modelo de domínio Transfer
-        return repository.findById(id)
-                .map(this::toDomain);
-
-    }
-
     // --- MAPPERS: Tradutores entre o Domínio Puro e a Infraestrutura JPA ---
 
     public TransferEntity toEntity(Transfer transfer) {
@@ -54,5 +38,21 @@ public class TransferPersistenceAdapter implements TransferRepositoryPort {
         transfer.setCreatedAt(entity.getCreatedAt());
         transfer.setUpdatedAt(entity.getUpdatedAt());
         return transfer;
+    }
+
+    @Override
+    public Transfer save(Transfer transfer) {
+        // 1. Converte domínio para entidade JPA, salva no banco e converte o resultado de volta para domínio
+        return toDomain(
+                repository.save(toEntity(transfer))
+        );
+    }
+
+    @Override
+    public Optional<Transfer> findById(Long id) {
+        // Busca no banco e se encontrar a Entity, mapeia (converte) para o modelo de domínio Transfer
+        return repository.findById(id)
+                .map(this::toDomain);
+
     }
 }
