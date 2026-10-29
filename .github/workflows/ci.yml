@@ -1,0 +1,38 @@
+# ==============================================================================
+# Pipeline de Integração Contínua (CI) — FinFlow Processing Service
+# ==============================================================================
+# Este arquivo configura o GitHub Actions para rodar automaticamente testes
+# e verificações de qualidade toda vez que houver alterações no repositório.
+# ==============================================================================
+
+name: CI - Processing Service
+
+# Define quando este workflow será acionado (gatilhos)
+on:
+  push:
+    branches: [ "processing-service", "main" ] # Aciona em push na branch do microsserviço ou main
+  pull_request:
+    branches: [ "processing-service", "main" ] # Aciona em PRs apontando para essas branches
+
+# Define os jobs (tarefas) que serão executados na nuvem do GitHub
+jobs:
+  build-and-test:
+    # Utiliza a última versão do ambiente Linux (Ubuntu) como servidor virtual
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Faz o checkout do código do repositório para a máquina virtual
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Passo 2: Configura o ambiente Java (JDK 17) necessário para rodar o Spring Boot
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin' # Distribuição Eclipse Temurin OpenJDK
+          cache: 'maven'        # Habilita cache automático das dependências do Maven para acelerar o build
+
+      # Passo 3: Executa os testes unitários e de integração utilizando o Maven
+      - name: Run Tests with Maven
+        run: mvn test
