@@ -46,5 +46,10 @@ O repositório possui uma pipeline configurada via **GitHub Actions** (`.github/
 
 ---
 
+## 🧠 Desenvolvimento Auxiliado por IA (AI Pair Programming)
+Este microsserviço foi construído através de **Programação em Par com Inteligência Artificial**, utilizando o **Claude Code** da Anthropic e agentes especializados integrados ao ambiente de desenvolvimento (`FinFlow Mentor` e `FinFlow QA`). A IA atuou como orientadora técnica em tempo real, auxiliando na aplicação rigorosa da Arquitetura Hexagonal, na estruturação de testes unitários com JUnit 5 e Mockito, e nas boas práticas de engenharia de software.
+
+---
+
 ## 👨‍💻 Autor
 Desenvolvido por **Luciano Junior** em parceria com os agentes de mentoria e IA do FinFlow.
