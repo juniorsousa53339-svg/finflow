@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ClaudeCodeEditorTabs">
-    <option name="activeSessionId" value="bfa68cdc-1d36-4f05-a060-8fb2c08b7f5d" />
+    <option name="activeSessionId" value="132df7b8-93d3-4afd-bb97-1316ca4846b7" />
     <option name="openSessionIds">
       <list>
         <option value="375add42-5dcb-4c95-b917-c3284d722572" />
-        <option value="bfa68cdc-1d36-4f05-a060-8fb2c08b7f5d" />
+        <option value="132df7b8-93d3-4afd-bb97-1316ca4846b7" />
       </list>
     </option>
     <option name="sessionPaths">
       <map>
+        <entry key="132df7b8-93d3-4afd-bb97-1316ca4846b7" value="/sessions/a94964cf-9ee4-4ada-a2b8-495611faa831" />
         <entry key="375add42-5dcb-4c95-b917-c3284d722572" value="/sessions/ebaca0f9-172d-46ad-8d11-ba0a1b052a58" />
-        <entry key="bfa68cdc-1d36-4f05-a060-8fb2c08b7f5d" value="/sessions/1afb951a-a30f-4c79-9697-1616e62ea803" />
       </map>
     </option>
     <option name="sessionTitles">
       <map>
+        <entry key="132df7b8-93d3-4afd-bb97-1316ca4846b7" value="Git upstream branch" />
         <entry key="375add42-5dcb-4c95-b917-c3284d722572" value="@.claude/agents/finflow-qa.md , quero que vc me en" />
         <entry key="68ec85b0-1509-409b-aacb-9d58bfb25d66" value="Finflow-mentor microserviço" />
-        <entry key="bfa68cdc-1d36-4f05-a060-8fb2c08b7f5d" value="TransferProcessServiceTest testes unitários" />
       </map>
     </option>
   </component>
