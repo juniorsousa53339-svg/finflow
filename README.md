@@ -1,12 +1,13 @@
-# FinFlow 💸
-
-> Sistema simulador de transferências financeiras desenvolvido com foco educacional e arquitetural.
-
----
 
 ## 📋 Sobre o Projeto
 
-O **FinFlow** é um projeto de estudo e portfólio criado para simular o fluxo de transferências financeiras entre contas de forma segura, resiliente e escalável. O objetivo principal é proporcionar vivência prática em engenharia de software backend, aplicando conceitos avançados de arquitetura de microsserviços, mensageria assíncrona, transações, idempotência e testes automatizados.
+# FinFlow — Ecossistema de Transferências Financeiras
+
+> **Projeto Concluído com Sucesso!** 🎉
+> O ecossistema **FinFlow** é composto por dois microsserviços principais organizados em branches dedicadas:
+> - **`transfer-service`**: Microsserviço de origem responsável por receber e publicar eventos de transferências.
+> - **`processing-service`**: Microsserviço de processamento assíncrono (consumo via Apache Kafka), validação de regras de negócio e persistência com Arquitetura Hexagonal.
+
 
 *⚠️ **Aviso:** O FinFlow é um projeto puramente educacional. Nenhuma movimentação financeira real é realizada.*
 
@@ -112,15 +113,8 @@ docker compose up -d
 - [x] **Etapa 3:** Camada de persistência relacional (JPA, H2 e PostgreSQL) e Global Exception Handler.
 - [x] **Etapa 4:** Integração com mensageria assíncrona (Apache Kafka Producer).
 - [x] **Etapa 5:** Criação e estruturação do `processing-service` (Arquitetura Hexagonal, Configuração Kafka/JPA).
-- [ ] **Etapa 6:** Consumo de eventos via Kafka `@KafkaListener` no `processing-service` e atualização de status.
-- [ ] **Etapa 7:** Documentação da API (OpenAPI/Swagger) e pipeline de CI/CD (GitHub Actions).
-
----
-
-## 🧭 Próximos Passos para Conclusão
-1. **Desenvolvimento do `processing-service`:** Criar o segundo microsserviço Spring Boot dedicado ao consumo assíncrono.
-2. **Consumo via Kafka:** Implementar o listener no novo serviço para escutar o tópico `finflow.transfer.requested`.
-3. **Evolução de Status:** Atualizar o ciclo de vida da transferência (PENDING -> PROCESSING -> COMPLETED/FAILED).
+- [x] **Etapa 6:** Consumo de eventos via Kafka `@KafkaListener` no `processing-service` e atualização de status.
+- [x] **Etapa 7:** Documentação da API (OpenAPI/Swagger) e pipeline de CI/CD (GitHub Actions).
 
 ---
 
