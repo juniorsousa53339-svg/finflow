@@ -3,6 +3,7 @@ package com.finflow.processing.adapter.in.kafka;
 import com.finflow.processing.domain.model.Transfer;
 import com.finflow.processing.domain.port.in.TransferUseCase;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -10,25 +11,24 @@ import org.springframework.stereotype.Component;
  * Adaptador de Entrada (Driving Adapter) responsável por consumir
  * eventos assíncronos do Apache Kafka.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransferKafkaConsumer {
 
-    // Porta de entrada (Use Case) injetada para manter o desacoplamento da Arquitetura Hexagonal
     private final TransferUseCase transferUseCase;
 
-    /**
-     * Ouve o tópico do Kafka e processa a transferência recebida.
-     *
-     * @param_topics: Tópico onde o transfer-service publica os pedidos de transferência.
-     * @param_groupId: Grupo de consumidores que garante balanceamento de carga no Kafka.
-     */
     @KafkaListener(
-            topics = "finflow.transfer.requested"
-            ,groupId = "processing-group"
+            topics = "transfer-requested",
+            groupId = "processing-group"
     )
     public void listen(Transfer transfer) {
-        // Delega a execução para o Caso de Uso da aplicação
-        transferUseCase.transferReceived(transfer);
+        log.info("Evento recebido do Kafka com sucesso: {}", transfer);
+        try {
+            Transfer processed = transferUseCase.transferReceived(transfer);
+            log.info("Transferência processada e salva com ID={} e Status={}", processed.getId(), processed.getStatus());
+        } catch (Exception e) {
+            log.error("Erro ao processar transferência recebida do Kafka", e);
+        }
     }
 }

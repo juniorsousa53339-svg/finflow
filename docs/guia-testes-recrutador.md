@@ -1,28 +1,26 @@
 # 🧪 Guia Passo a Passo: Testando o Ecossistema FinFlow para Recrutadores
 
-Este documento apresenta um roteiro detalhado e profissional para demonstrar e testar o funcionamento completo do ecossistema **FinFlow**, integrando o **`transfer-service`** (produtor REST e mensageria) e o **`processing-service`** (consumidor assíncrono via Apache Kafka e persistência) utilizando **Arquitetura Hexagonal**.
+Este documento apresenta um roteiro detalhado e profissional para demonstrar e testar o funcionamento completo do ecossistema **FinFlow**, integrando o **`transfer-service`** (produtor REST e Swagger) e o **`processing-service`** (consumidor assíncrono via Apache Kafka e Swagger na porta 8081) utilizando **Arquitetura Hexagonal**.
 
 ---
 
 ## 🏗️ 1. Arquitetura do Fluxo End-to-End (E2E)
 
 ```text
-[ Cliente / Postman ]
+[ Swagger UI transfer-service ] (Porta 8080)
        │
        ▼  HTTP POST /transfers
-[ transfer-service ] (Porta 8080)
-       │
-       ├─► Validação & Persistência (PostgreSQL / H2)
+[ transfer-service ] 
        │
        ▼  Publica Evento (Async)
-[ Apache Kafka ] ── Tópico: finflow.transfer.requested
+[ Apache Kafka ] ── Tópico: transfer-requested
        │
        ▼  Consumo via @KafkaListener
 [ processing-service ] (Porta 8081)
        │
        ├─► Processamento de Negócio (Status -> COMPLETED)
        ▼
-[ Banco de Dados ] (Persistência Final)
+[ Swagger UI processing-service ] (Porta 8081 - GET /transfers)
 ```
 
 ---
@@ -34,13 +32,13 @@ Certifique-se de ter instalado em sua máquina:
 - **Maven** (ou use o Maven Wrapper `mvnw` incluso)
 - **Docker & Docker Compose** (para rodar o PostgreSQL e o Apache Kafka)
 - **PowerShell** (Windows) ou **Bash** (Linux/Mac)
-- **Postman**, **cURL** ou ferramenta similar para requisições HTTP
+- **Navegador Web** (para acessar as interfaces Swagger UI)
 
 ---
 
-## 🚀 3. Roteiro de Demonstração Passo a Passo
+## 🚀 3. Roteiro de Demonstração Passo a Passo com Swagger
 
-### Passo 3.1: Subir a Infraestrutura (PostgreSQL, Zookeeper e Kafka)
+### Passo 3.1: Subir a Infraestrutura (Zookeeper e Kafka)
 Abra o terminal na pasta do **`transfer-service`** onde se encontra o arquivo `docker-compose.yml` e execute:
 
 ```powershell
@@ -48,101 +46,68 @@ docker compose up -d
 ```
 
 *Como verificar:*
-Execute `docker ps` para garantir que os três containers (`finflow-postgres`, `finflow-zookeeper` e `finflow-kafka`) estão em execução.
+Execute `docker ps` para garantir que os containers do Kafka e Zookeeper estão ativos.
 
 ---
 
-### Passo 3.2: Executar os Testes Automatizados (Garantia de Qualidade)
-Antes de rodar os serviços, demonstre o rigor técnico executando os testes unitários e de integração baseados em **JUnit 5** e **Mockito**:
-
-1. **Testes do `processing-service`:**
-   ```powershell
-   cd "C:\Users\Luciano Junior\Downloads\processing-service"
-   & .\mvnw.cmd test
-   ```
-   *(Destaque o teste `TransferProcessServiceTest`, que valida de forma isolada as regras de negócio de processamento).*
-
-2. **Testes do `transfer-service`:**
-   ```powershell
-   cd "C:\Users\Luciano Junior\Downloads\transfer-service"
-   & .\mvnw.cmd test
-   ```
-
----
-
-### Passo 3.3: Iniciar o `transfer-service` (Produtor)
-No terminal localizado em `transfer-service`, inicie a aplicação conectada ao ambiente Docker ou H2:
+### Passo 3.2: Iniciar o `transfer-service` (Porta 8080)
+No terminal localizado em `transfer-service`, inicie a aplicação:
 
 ```powershell
-& .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=docker"
+& .\mvnw.cmd spring-boot:run
 ```
 *(A aplicação subirá na porta **`8080`**).*
 
 ---
 
-### Passo 3.4: Iniciar o `processing-service` (Consumidor)
+### Passo 3.3: Iniciar o `processing-service` (Porta 8081)
 Abra um **novo terminal** na pasta do `processing-service` e inicie o serviço:
 
 ```powershell
 cd "C:\Users\Luciano Junior\Downloads\processing-service"
 & .\mvnw.cmd spring-boot:run
 ```
-*(A aplicação subirá na porta **`8081`** ou padrão, conectando-se ao broker Kafka para escutar o tópico `finflow.transfer.requested`).*
+*(A aplicação subirá na porta **`8081`**, conectando-se ao broker Kafka e disponibilizando o Swagger).*
 
 ---
 
-### Passo 3.5: Disparar uma Transferência (Requisição REST)
-Com ambos os serviços rodando e o Kafka ativo, envie uma requisição `POST` para o `transfer-service`. Você pode usar o comando abaixo no **PowerShell**:
-
-```powershell
-$body = @{
-    sourceAccount = 100
-    destinationAccount = 200
-    amount = 350.75
-} | ConvertFrom-Json | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:8080/transfers" -Method Post -Body $body -ContentType "application/json"
-```
-
-*Resposta esperada (HTTP 201 Created):*
-```json
-{
-    "id": 1,
-    "sourceAccount": 100,
-    "destinationAccount": 200,
-    "amount": 350.75,
-    "status": "PENDING",
-    "createdAt": "2026-11-07T10:00:00"
-}
-```
+### Passo 3.4: Demonstrar o `processing-service` Vazio pelo Swagger
+1. Abra o navegador e acesse o Swagger do `processing-service`:
+   👉 **`http://localhost:8081/swagger-ui/index.html`**
+2. Expanda o endpoint `GET /transfers` e clique em **Try it out** -> **Execute**.
+3. Mostre ao recrutador que a lista está vazia (`[]`), provando que nenhuma transferência foi processada ainda.
 
 ---
 
-### Passo 3.6: Acompanhar o Fluxo Assíncrono nos Logs 🔍
-Observe o comportamento simultâneo nos consoles dos dois microsserviços:
+### Passo 3.5: Fazer o POST no Swagger do `transfer-service`
+1. Abra uma nova aba no navegador e acesse o Swagger do `transfer-service`:
+   👉 **`http://localhost:8080/swagger-ui/index.html`**
+2. Encontre o endpoint `POST /transfers`, clique em **Try it out** e envie o JSON de transferência:
+   ```json
+   {
+     "sourceAccount": 100,
+     "destinationAccount": 200,
+     "amount": 350.75
+   }
+   ```
+3. Clique em **Execute** (Status `201 Created` retornado).
 
-1. **No console do `transfer-service`:**
-   - Recebimento da requisição HTTP POST.
-   - Validação dos dados (Bean Validation).
-   - Persistência inicial no banco com status `PENDING`.
-   - **Publicação bem-sucedida** do evento no tópico Kafka `finflow.transfer.requested` (com partition e offset exibidos no log).
+---
 
-2. **No console do `processing-service`:**
-   - O `@KafkaListener` intercepta instantaneamente a mensagem do tópico `finflow.transfer.requested`.
-   - O caso de uso processa a transferência, atualizando o status para `COMPLETED`.
-   - Persistência do estado final no banco de dados do processing service.
+### Passo 3.6: Comprovar a Chegada e o Processamento no `processing-service`
+1. Volte para a aba do Swagger do `processing-service` (`http://localhost:8081/swagger-ui/index.html`).
+2. Clique novamente em **Execute** no endpoint `GET /transfers`.
+3. **Resultado:** A transferência aparecerá instantaneamente na lista com o status atualizado para **`COMPLETED`**, demonstrando o fluxo assíncrono de ponta a ponta via Apache Kafka!
 
 ---
 
 ## 🎯 4. Argumentos Chave para Destacar com o Recrutador
 
-Quando for apresentar este projeto em uma entrevista técnica, enfatize os seguintes pontos:
-
 1. **Arquitetura Hexagonal (Ports & Adapters):**
-   > *"O núcleo de domínio de ambos os microsserviços é 100% puro e isolado de frameworks como Spring, JPA ou Kafka. Isso garante alta testabilidade e flexibilidade para trocar tecnologias sem reescrever regras de negócio."*
+   > *"O núcleo de domínio é 100% puro e isolado de frameworks, garantindo alta testabilidade e flexibilidade."*
 
-2. **Mensageria Assíncrona e Resiliência:**
-   > *"A comunicação entre os serviços não é acoplada via chamadas HTTP síncronas. O `transfer-service` publica eventos no Apache Kafka, permitindo que o `processing-service` processe as transferências de forma assídua, escalável e tolerante a falhas."*
+2. **Mensageria Assíncrona e Resiliência (Kafka):**
+   > *"A comunicação é desacoplada. O `transfer-service` publica o evento no Kafka e o `processing-service` consome e processa de forma assíncrona."*
 
-3. **Engenharia de Software Moderna:**
-   > *"Utilizei Java 17, Spring Boot, Bean Validation, tratamentos centralizados de exceções (`GlobalExceptionHandler`), testes unitários com JUnit 5 e Mockito, além de orquestração completa com Docker Compose."*
+3. **Documentação Integrada via Swagger UI:**
+   > *"Ambos os microsserviços possuem documentação OpenAPI/Swagger interativa (porta 8080 para origem e porta 8081 para processamento), facilitando a demonstração E2E em tempo real."*

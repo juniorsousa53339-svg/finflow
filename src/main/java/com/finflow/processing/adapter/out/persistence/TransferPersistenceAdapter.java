@@ -6,7 +6,9 @@ import com.finflow.processing.domain.port.out.TransferRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -42,7 +44,6 @@ public class TransferPersistenceAdapter implements TransferRepositoryPort {
 
     @Override
     public Transfer save(Transfer transfer) {
-        // 1. Converte domínio para entidade JPA, salva no banco e converte o resultado de volta para domínio
         return toDomain(
                 repository.save(toEntity(transfer))
         );
@@ -50,9 +51,14 @@ public class TransferPersistenceAdapter implements TransferRepositoryPort {
 
     @Override
     public Optional<Transfer> findById(Long id) {
-        // Busca no banco e se encontrar a Entity, mapeia (converte) para o modelo de domínio Transfer
         return repository.findById(id)
                 .map(this::toDomain);
+    }
 
+    @Override
+    public List<Transfer> findAll() {
+        return repository.findAll().stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
     }
 }
