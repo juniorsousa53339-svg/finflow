@@ -24,7 +24,7 @@ public class TransferKafkaConsumer {
      * @param_groupId: Grupo de consumidores que garante balanceamento de carga no Kafka.
      */
     @KafkaListener(
-            topics = "transfer-requested"
+            topics = "finflow.transfer.requested"
             ,groupId = "processing-group"
     )
     public void listen(Transfer transfer) {
